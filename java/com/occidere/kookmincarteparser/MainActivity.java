@@ -27,16 +27,17 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Made by occidere", Toast.LENGTH_SHORT).show();
         //커스텀 아이콘 설정시 필수
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-         //인터넷 연결시 onCreate 하단에 필수 선언
+        //인터넷 연결시 onCreate 하단에 필수 선언
         StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build());
         setContentView(R.layout.activity_main);
         print="";
         tv = (TextView)findViewById(R.id.mainText);
         try{
             String today = findToday();
-            bubsikPrint(today);
-            print+="\n";
-            haksikPrint(today);
+            bubsikPrint(today); print+="\n";
+            haksikPrint(today); print+="\n";
+            facultyPrint(today); print+="\n";
+            chunghyangPrint(today);
             tv.setText(print);
             tv.setTextColor(Color.BLACK);
         }
@@ -45,34 +46,43 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //오늘의 날짜 찾기
     private static String findToday(){
         Calendar cal = Calendar.getInstance();
         int year = cal.get(Calendar.YEAR), month = cal.get(Calendar.MONTH)+1, date = cal.get(Calendar.DATE);
         return year+"년 "+month+"월 "+date+"일";
     }
+    //각 식당마다 오늘 메뉴 부분만 뽑아서 Elements 타입으로 리턴
+    private static Elements jsoupConnect(String address) throws Exception {
+        String tag = "td[bgcolor=#eaffd9]";
+        Document doc = Jsoup.connect(address).get();
+        return doc.select(tag);
+    }
+    //법식 출력
     private static void bubsikPrint(String today) throws Exception {
         print+="## 법학관 한울식당 메뉴 ("+today+") ##\n";
         String tmp; i = 0;
         String bubsikMenu[] = { "바로바로1", "바로바로2", "면이랑", "밥이랑 하나", "밥이랑 두울", "石火랑", "石火랑(조식)"};
 
-        Document doc = Jsoup.connect(address+1).get();
-        Elements menu = doc.select("td[bgcolor=#eaffd9]");
+        Elements menu = jsoupConnect(address+1);
+
         for (Element res : menu) {
             tmp = res.text();
             if (tmp.contains("*중식")) tmp = tmp.replace("*석식*", "\n*석식*");
             bubsikMenu[i] = "------- <"+bubsikMenu[i]+"> -------\n" + tmp+"\n";
-            if(1<i && i<6) print+=bubsikMenu[i]+"\n";
+
+            if(1<i && i<6) print+=bubsikMenu[i];
             i++;
         }
     }
+    //학식 출력
     private static void haksikPrint(String today) throws Exception {
         print+="## 복지관 학생식당 메뉴 ("+today+") ##\n";
         String haksikMenu[] = { "착한아침", "가마", "누들송(면)", "누들송(카페테리아)", "인터쉐프", "데일리밥"};
 
         for(i=0;i<6;i++) haksikMenu[i] = "------- <"+haksikMenu[i]+"> -------\n"; i=0;
 
-        Document doc = Jsoup.connect(address+2).get();
-        Elements menu = doc.select("td[bgcolor=#eaffd9]");
+        Elements menu = jsoupConnect(address+2);
 
         for (Element res : menu) {
             String tmp = res.text();
@@ -87,9 +97,37 @@ public class MainActivity extends AppCompatActivity {
             else haksikMenu[i]+=tmp;
             i++;
         }
-        for(i=0;i<6;i++) print+=haksikMenu[i]+"\n";
+        for(i=0;i<6;i++) print+=haksikMenu[i];
     }
+    //교직원식당 출력
+    private static void facultyPrint(String today) throws Exception{
+        print+="## 복지관 교직원식당 메뉴 ("+today+") ##\n";
+        String facultyMenu[] = {"키친1", "키친2", "주문식", "석식"};
 
+        for(i=0;i<4;i++) facultyMenu[i] = "------- <"+facultyMenu[i]+"> -------\n"; i=0;
+
+        Elements menu = jsoupConnect(address+3);
+
+        for(Element res : menu){
+            String tmp = res.text();
+
+            if(i>2) tmp = "*석식* "+tmp+"\n";
+            else tmp = "*중식* "+tmp+"\n";
+
+            print+=(facultyMenu[i++]+=tmp);
+        }
+    }
+    //청향 출력
+    private static void chunghyangPrint(String today) throws Exception{
+        print+="## 법학관 청향 메뉴 ("+today+") ##\n";
+        String chunghyangMenu[] = {"메뉴1", "메뉴2", "메뉴3", "메뉴4", "메뉴5", "메뉴6", "메뉴7"};
+
+        for(i=0;i<7;i++) chunghyangMenu[i] = "------- <"+chunghyangMenu[i]+"> -------\n"; i=0;
+
+        Elements menu = jsoupConnect(address+4);
+
+        for(Element res : menu) print+=(chunghyangMenu[i++]+"*중식* "+res.text()+"\n");
+    }
     //공유하기 기능
     public void onClick(View view){
         Intent msg = new Intent(Intent.ACTION_SEND);
