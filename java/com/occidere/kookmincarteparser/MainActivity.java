@@ -161,4 +161,11 @@ public class MainActivity extends AppCompatActivity {
         msg.setType("text/plain");
         startActivity(Intent.createChooser(msg, "공유"));
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        breakfast=""; lunch=""; dinner="";
+        print="";
+    }
 }
