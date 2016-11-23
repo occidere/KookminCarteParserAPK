@@ -57,16 +57,23 @@ public class MainActivity extends AppCompatActivity {
     //각 식당마다 오늘 메뉴 부분만 뽑아서 Elements 타입으로 리턴
     private static Elements jsoupConnect(String address) throws Exception {
         String tag = "td[bgcolor=#eaffd9]";
-        Document doc = Jsoup.connect(address).get();
+        Document doc = Jsoup.connect(address).timeout(5000).get(); //최대 5초까지 기다림
         return doc.select(tag);
     }
+
     //법식
     private static void parseBubsik() throws Exception {
         String bubsik = "[법식]", tmp;
         Elements menu = jsoupConnect(address+1);
         for (Element res : menu) {
             tmp = removeBracket(res.text());
-            if(tmp.contains("중식")) lunch+=bubsik+tmp.substring(tmp.indexOf("식*")+2)+"\n";
+            if(tmp.contains("중식")){
+                if(tmp.contains("석식")){
+                    lunch+=bubsik+tmp.substring(tmp.indexOf("식*")+2, tmp.indexOf("*석식*"))+"\n";
+                    dinner+=bubsik+tmp.substring(tmp.indexOf("*석식*")+4)+"\n";
+                }
+                else lunch+=bubsik+tmp.substring(tmp.indexOf("식*")+2)+"\n";
+            }
             else if(tmp.contains("중석식")){
                 lunch+=bubsik+tmp.substring(tmp.indexOf("식*")+2)+"\n";
                 dinner+=bubsik+tmp.substring(tmp.indexOf("식*")+2)+"\n";
@@ -119,11 +126,11 @@ public class MainActivity extends AppCompatActivity {
 
     //파싱한 메뉴 출력
     private static void printAll(){
-        print+="------- <조식> -------\n";
+        print+="---------- <조식> ----------\n";
         print+=breakfast;
-        print+="------- <중식> -------\n";
+        print+="---------- <중식> ----------\n";
         print+=lunch;
-        print+="------- <석식> -------\n";
+        print+="---------- <석식> ----------\n";
         print+=dinner;
     }
 
