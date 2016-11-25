@@ -67,18 +67,13 @@ public class MainActivity extends AppCompatActivity {
         Elements menu = jsoupConnect(address+1);
         for (Element res : menu) {
             tmp = removeBracket(res.text());
-            if(tmp.contains("중식")){
-                if(tmp.contains("석식")){
-                    lunch+=bubsik+tmp.substring(tmp.indexOf("식*")+2, tmp.indexOf("*석식*"))+"\n";
-                    dinner+=bubsik+tmp.substring(tmp.indexOf("*석식*")+4)+"\n";
-                }
-                else lunch+=bubsik+tmp.substring(tmp.indexOf("식*")+2)+"\n";
+            if(tmp.contains("*중식*"))lunch+=bubsik+tmp.substring(tmp.indexOf("*중식*")+4)+"\n";
+            else if(tmp.contains("*석식*")) dinner+=bubsik+tmp.substring(tmp.indexOf("*석식*")+4)+"\n";
+            else if(tmp.contains("*중석식*")){
+                lunch+=bubsik+tmp.substring(tmp.indexOf("*중석식*")+5)+"\n";
+                dinner+=bubsik+tmp.substring(tmp.indexOf("*중석식*")+5)+"\n";
             }
-            else if(tmp.contains("중석식")){
-                lunch+=bubsik+tmp.substring(tmp.indexOf("식*")+2)+"\n";
-                dinner+=bubsik+tmp.substring(tmp.indexOf("식*")+2)+"\n";
-            }
-            else breakfast+=bubsik+" "+tmp+"\n";
+            else breakfast+=bubsik+" "+tmp+"\n"; //조식
         }
         breakfast+="\n"; lunch+="\n"; dinner+="\n";
     }
