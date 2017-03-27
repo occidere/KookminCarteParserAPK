@@ -19,18 +19,18 @@ public class MainActivity extends AppCompatActivity {
     TextView tv;
     static String print;
     private static final String address = "http://kmucoop.kookmin.ac.kr/restaurant/restaurant.php?w=";
-    private static String breakfast="", lunch="", dinner="";
+    private static String breakfast, lunch, dinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Toast.makeText(this, "Made by occidere", Toast.LENGTH_SHORT).show();
+        print = breakfast = lunch = dinner = "";
+        Toast.makeText(this, "Made by occidere (ver 0.2.5)", Toast.LENGTH_SHORT).show();
         //커스텀 아이콘 설정시 필수
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         //인터넷 연결시 onCreate 하단에 필수 선언
         StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build());
         setContentView(R.layout.activity_main);
-        print="";
         tv = (TextView)findViewById(R.id.mainText);
         try{
             String today = findToday();
@@ -63,10 +63,10 @@ public class MainActivity extends AppCompatActivity {
 
     //법식
     private static void parseBubsik() throws Exception {
-        String bubsik = "[법식]", tmp;
+        String bubsik = "[법]", tmp;
         Elements menu = jsoupConnect(address+1);
         for (Element res : menu) {
-            tmp = removeBracket(res.text());
+            tmp = removeAllBracket(res.text());
             if(tmp.contains("*중식*")){ //중식으로 시작하는 경우
                 if(tmp.contains("*석식*")){ //중식과 석식이 한줄에 같이 있는 경우
                     lunch+=bubsik+tmp.substring(tmp.indexOf("*중식*")+4, tmp.indexOf("*석식*"))+"\n";
@@ -85,13 +85,14 @@ public class MainActivity extends AppCompatActivity {
         }
         breakfast+="\n"; lunch+="\n"; dinner+="\n";
     }
+
     //학식
     private static void parseHaksik() throws Exception {
-        String haksik = "[학식]", tmp;
+        String haksik = "[학]", tmp;
         Elements menu = jsoupConnect(address+2);
         int i=0;
         for (Element res : menu) {
-            tmp = removeBracket(res.text());
+            tmp = removeAllBracket(res.text());
             if(i==0) breakfast+=(haksik+" "+tmp+"\n"); //조식
             else if(i<6) lunch+=(haksik+" "+tmp+"\n"); //중식
             else dinner+=(haksik+" "+tmp+"\n"); //석식
@@ -103,11 +104,12 @@ public class MainActivity extends AppCompatActivity {
 
     //교직원식당
     private static void parseFaculty() throws Exception{
-        String faculty = "[교직원]", tmp;
+        String faculty = "[교]", tmp;
         Elements menu = jsoupConnect(address+3);
         int i=0;
         for(Element res : menu){
-            tmp = removeBracket(res.text());tmp = tmp.substring(tmp.indexOf(']')+1).trim();
+            tmp = removeAllBracket(res.text());
+            tmp = tmp.substring(tmp.indexOf(']')+1).trim();
             if(i>2) dinner+=(faculty+" "+tmp+"\n");//석식
             else lunch+=(faculty+" "+tmp+"\n");//중식
             i++;
@@ -117,52 +119,61 @@ public class MainActivity extends AppCompatActivity {
 
     //청향
     private static void parseChunghyang() throws Exception{
-        String chunghyang = "[청향]", tmp;
+        String chunghyang = "[청]";
         Elements menu = jsoupConnect(address+4);
         //청향은 중식만 운영
         for(Element res : menu){
-            tmp = removeBracket(res.text());
-            lunch+=(chunghyang+" "+tmp+"\n");
+            lunch+=(chunghyang+" "+removeAllBracket(res.text())+"\n");
         }
         lunch+="\n";
     }
 
     //파싱한 메뉴 출력
     private static void printAll(){
-        print+="---------- <조식> ----------\n";
+        print+="----------- <조식> -----------\n";
         print+=breakfast;
-        print+="---------- <중식> ----------\n";
+        print+="----------- <중식> -----------\n";
         print+=lunch;
-        print+="---------- <석식> ----------\n";
+        print+="----------- <석식> -----------\n";
         print+=dinner;
     }
 
-    //메뉴 앞에 붙은 보기싫은 수식어구 제거
-    private static String removeBracket(String menu){
-        char tmp[] = menu.toCharArray();
-        int i, j=0, size = menu.length();
+    //괄호 안 ( ) [ ] 의 원산지나 부연설명 제거
+    private static String removeAllBracket(String menu){
         StringBuilder res = new StringBuilder();
-        char stack[] = new char[size];
-        for(i=0;i<size;i++){
-            //() 또는 []내부의 쓸모없는 원산지나 미사여구 제거
-            if(tmp[i]=='('){
-                while(true) {
-                    if(tmp[i]==')') break;
-                    else i++;
+        int i, len = menu.length();
+        char ch;
+        for(i=0;i<len;i++){
+            ch = menu.charAt(i);
+            if(ch=='[') {
+                while(ch!=']' && i<len){
+                    if(ch=='￦'){
+                        i-=2;
+                        break;
+                    }
+                    ch = menu.charAt(i++);
                 }
             }
-            else if(tmp[i]=='[') {
-                while(true) {
-                    if(tmp[i]==']') break;
-                    else i++;
-                }
-            }
-            //괄호 밖의 평문인 경우 전부 스택에 담는다.
-            else stack[j++] = tmp[i];
+            else res.append(ch);
         }
-        for(i=0;i<j;i++) res.append(stack[i]);
+        menu = res.toString().trim();
+        res = new StringBuilder();
+        for(len = menu.length(), i=0;i<len;i++){
+            ch = menu.charAt(i);
+            if(ch=='(') {
+                while(ch!=')' && i<len){
+                    if(ch=='￦'){
+                        i-=2;
+                        break;
+                    }
+                    ch = menu.charAt(i++);
+                }
+            }
+            else res.append(ch);
+        }
         return res.toString().trim();
     }
+
     //공유하기 기능
     public void onClick(View view){
         Intent msg = new Intent(Intent.ACTION_SEND);
@@ -175,7 +186,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        breakfast=""; lunch=""; dinner="";
-        print="";
+        print = breakfast = lunch = dinner = "";
     }
 }
