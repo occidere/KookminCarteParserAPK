@@ -1,0 +1,4 @@
+configurations.maybeCreate("default")
+artifacts.add("default", file('kmuc-0.1.0.0.jar'))
+dependencies {
+}

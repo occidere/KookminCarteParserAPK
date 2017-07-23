@@ -1,0 +1,1 @@
+include ':app', ':kmuc-0.1.0.0', ':json-simple-1.1.1'
